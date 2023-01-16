@@ -70,8 +70,7 @@ action:
                 'down_close') }}
             sequence:
               - service: cover.stop_cover
-                target:
-                  device_id: !input cover
+                target: !input cover
                 data: {}
           - conditions:
               - >-
@@ -79,21 +78,18 @@ action:
                 'stop_closing') }}
             sequence:
               - service: cover.stop_cover
-                target:
-                  device_id: !input cover
+                target: !input cover
                 data: {}
           - conditions:
               - "{{ trigger.event.data.command in ('up_open') }}"
             sequence:
               - service: cover.open_cover
-                target:
-                  device_id: !input cover
+                target: !input cover
                 data: {}
           - conditions:
               - "{{ trigger.event.data.command in ('down_close') }}"
             sequence:
               - service: cover.close_cover
-                target:
-                  device_id: !input cover
+                target: !input cover
                 data: {}
 mode: single
