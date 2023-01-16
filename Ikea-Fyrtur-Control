@@ -1,0 +1,101 @@
+blueprint:
+  name: Cover control with Tradfri open/close remote
+  description: |
+    Control a cover with an Ikea Tradfri open/close button remote over ZHA
+
+    Short press on ☼ button will open the cover.
+    Short press on ☰ button will close the cover.
+    A press during opening or closing will stop the cover.
+    Long press on ☼ or ☰  will open close the cover until the button is released.
+  domain: automation
+  input:
+    remote:
+      name: Remote
+      description: "IKEA open/close remote to use"
+      selector:
+        device:
+          integration: zha
+          manufacturer: "IKEA of Sweden"
+          model: "TRADFRI open/close remote"
+    cover:
+      name: Cover
+      description: The cover to control
+      selector:
+        target:
+          entity:
+            domain: cover
+            multiple: false
+    state:
+      name: State
+      discription: Input Text Helper for storing the cover state
+      selector:
+        entity:
+          domain: input_text
+          multiple: false
+trigger:
+  - platform: event
+    id: tr_remote
+    alias: Trigger Remote Control
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
+  - platform: state
+    id: tr_blind
+    alias: Trigger Blind
+    entity_id:
+      - !input cover
+    to:
+      - open
+      - opening
+      - closed
+      - closing
+condition: []
+action:
+  - if:
+      - condition: trigger
+        id: tr_blind
+    then:
+      - service: input_text.set_value
+        data:
+          value: "{{ trigger.to_state.state }}"
+        target:
+          entity_id: !input state
+  - if:
+      - condition: trigger
+        id: tr_remote
+    then:
+      - choose:
+          - conditions:
+              - >-
+                {{ states('input_text.office_window_blind_state') in ('closing',
+                'opening') and trigger.event.data.command in ('up_open',
+                'down_close') }}
+            sequence:
+              - service: cover.stop_cover
+                target:
+                  device_id: !input cover
+                data: {}
+          - conditions:
+              - >-
+                {{ trigger.event.data.command in ('stop', 'stop_opening',
+                'stop_closing') }}
+            sequence:
+              - service: cover.stop_cover
+                target:
+                  device_id: !input cover
+                data: {}
+          - conditions:
+              - "{{ trigger.event.data.command in ('up_open') }}"
+            sequence:
+              - service: cover.open_cover
+                target:
+                  device_id: !input cover
+                data: {}
+          - conditions:
+              - "{{ trigger.event.data.command in ('down_close') }}"
+            sequence:
+              - service: cover.close_cover
+                target:
+                  device_id: !input cover
+                data: {}
+mode: single
