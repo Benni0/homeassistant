@@ -24,14 +24,12 @@ blueprint:
         target:
           entity:
             domain: cover
-            multiple: false
     state:
       name: State
       description: Input Text Helper for storing the cover state
       selector:
         entity:
           domain: input_text
-          multiple: false
 trigger:
   - platform: event
     id: tr_remote
