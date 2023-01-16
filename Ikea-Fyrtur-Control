@@ -40,7 +40,7 @@ trigger:
   - platform: state
     id: tr_blind
     alias: Trigger Blind
-    entity_id: !input cover
+    entity_id: "{{ (!input cover).entity_id }}"
     to:
       - open
       - opening
