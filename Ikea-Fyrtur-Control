@@ -40,7 +40,7 @@ trigger:
   - platform: state
     id: tr_blind
     alias: Trigger Blind
-    entity_id: "{{ (!input cover).entity_id }}"
+    entity_id: !input cover
     to:
       - open
       - opening
@@ -69,7 +69,8 @@ action:
                 'down_close') }}
             sequence:
               - service: cover.stop_cover
-                target: !input cover
+                target: 
+                  entity_id: !input cover
                 data: {}
           - conditions:
               - >-
@@ -77,18 +78,21 @@ action:
                 'stop_closing') }}
             sequence:
               - service: cover.stop_cover
-                target: !input cover
+                target: 
+                  entity_id: !input cover
                 data: {}
           - conditions:
               - "{{ trigger.event.data.command in ('up_open') }}"
             sequence:
               - service: cover.open_cover
-                target: !input cover
+                target:
+                  entity_id: !input cover
                 data: {}
           - conditions:
               - "{{ trigger.event.data.command in ('down_close') }}"
             sequence:
               - service: cover.close_cover
-                target: !input cover
+                target:
+                  entity_id: !input cover
                 data: {}
 mode: single
