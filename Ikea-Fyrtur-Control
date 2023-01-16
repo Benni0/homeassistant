@@ -27,7 +27,7 @@ blueprint:
             multiple: false
     state:
       name: State
-      discription: Input Text Helper for storing the cover state
+      description: Input Text Helper for storing the cover state
       selector:
         entity:
           domain: input_text
