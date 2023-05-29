@@ -1,0 +1,169 @@
+blueprint:
+  name: Cover control with Tradfri open/close remote advanced
+  description: |
+    Control a cover with an Ikea Tradfri open/close button remote over ZHA
+    Stop when open/close Sensor indicates open
+    Additional trigger by State
+
+    Short press on ☼ button will open the cover.
+    Short press on ☰ button will close the cover.
+    A press during opening or closing will stop the cover.
+    Long press on ☼ or ☰  will open close the cover until the button is released.
+  domain: automation
+  input:
+    remote:
+      name: Remote
+      description: "IKEA open/close remote to use"
+      selector:
+        device:
+          integration: zha
+          manufacturer: "IKEA of Sweden"
+          model: "TRADFRI open/close remote"
+    cover:
+      name: Cover
+      description: The cover to control
+      selector:
+        entity:
+          filter:
+            domain: cover
+    open-close-sensor:
+      name: Open/Close Sensor
+      description: Open/Close Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+    cover-state:
+      name: Cover-State
+      description: Input Text Helper for storing the cover state
+      selector:
+        entity:
+          domain: 
+            - input_text
+            - input_select
+    desired-state:
+      name: Desired-State
+      description: Should indicate the desired cover state
+      selector:
+        entity:
+          domain: 
+            - input_text
+            - input_select
+trigger:
+  - platform: event
+    id: tr_remote
+    alias: Trigger Remote Control
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
+
+  - platform: state
+    id: tr_blind
+    alias: Trigger Blind
+    entity_id: !input cover
+    to:
+      - open
+      - opening
+      - closed
+      - closing
+
+  - platform: state
+    id: tr_sensor
+    alias: Trigger Open/Close Sensor
+    entity_id: !input open-close-sensor
+
+  - platform: state
+    id: tr_state
+    event_type: state_changed
+    entity_id: !input desired-state
+
+condition: []
+action:
+  - if:
+      - condition: trigger
+        id: tr_blind
+    then:
+      - service: input_text.set_value
+        data:
+          value: "{{ trigger.to_state.state }}"
+        target:
+          entity_id: !input state
+  - if:
+      - condition: and
+        conditions:
+        - condition: trigger
+          id: tr_remote
+        - condition: state
+          entity_id: !input open-close-sensor
+          state: "off"
+    then:
+      - choose:
+          - conditions:
+              - >-
+                {{ states('input_text.office_window_blind_state') in ('closing',
+                'opening') and trigger.event.data.command in ('up_open',
+                'down_close') }}
+            sequence:
+              - service: cover.stop_cover
+                target: 
+                  entity_id: !input cover
+                data: {}
+          - conditions:
+              - >-
+                {{ trigger.event.data.command in ('stop', 'stop_opening',
+                'stop_closing') }}
+            sequence:
+              - service: cover.stop_cover
+                target: 
+                  entity_id: !input cover
+                data: {}
+          - conditions:
+              - "{{ trigger.event.data.command in ('up_open') }}"
+            sequence:
+              - service: cover.open_cover
+                target:
+                  entity_id: !input cover
+                data: {}
+          - conditions:
+              - "{{ trigger.event.data.command in ('down_close') }}"
+            sequence:
+              - service: cover.close_cover
+                target:
+                  entity_id: !input cover
+                data: {}
+  - if:
+      - condition: and
+        conditions:
+        - condition: trigger
+          id: tr_state
+        - condition: state
+          entity_id: !input open-close-sensor
+          state: "off"
+    then:
+      - choose:
+        - conditions:
+          - "{{ trigger.to_state.state in ('open')}}"
+          sequence:
+            - service: cover.open_cover
+              target:
+                entity_id: !input cover
+              data: {}
+        - conditions:
+          - "{{ trigger.to_state.state in ('closed')}}"
+          sequence:
+            - service: cover.close_cover
+              target:
+                entity_id: !input cover
+              data: {}
+  - if:
+    - condition: trigger
+      id: tr_sensor
+    then:
+      - choose:
+        - conditions:
+          - "{{trigger.to_state.state not in ('off')}}"
+          sequence:
+            - service: cover.stop_cover
+              target:
+                entity_id: !input cover
+              data: {}
+mode: single
