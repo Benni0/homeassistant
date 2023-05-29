@@ -21,7 +21,7 @@ blueprint:
       name: Cover
       description: The cover to control
       selector:
-        target:
+        device:
           entity:
             domain: cover
     state:
