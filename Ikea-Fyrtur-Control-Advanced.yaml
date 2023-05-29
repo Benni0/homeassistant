@@ -86,7 +86,7 @@ action:
         data:
           value: "{{ trigger.to_state.state }}"
         target:
-          entity_id: !input state
+          entity_id: !input cover-state
   - if:
       - condition: and
         conditions:
